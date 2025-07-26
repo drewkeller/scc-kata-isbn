@@ -21,6 +21,7 @@ namespace BookNumbers {
         char CalculateCheckCharacter(const IsbnStandard standard, const std::string& input);
 
         bool IsDigit(const char* ptr);
+        bool IsIgnorableCharacter(const char* ptr);
         bool IsValidCharacter(const char* ptr);
         bool IsValidCheckCharacter(const char* ptr);
         int GetDigitFactor(const IsbnStandard standard, int digitPosition);

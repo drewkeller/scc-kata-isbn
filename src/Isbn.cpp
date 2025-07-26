@@ -21,6 +21,10 @@ using namespace BookNumbers;
 //  2. summing these products together 
 //  3. taking modulo 11 of the result (with 'X' being used if the result is 10)
 
+namespace BookNumbers {
+    constexpr int MAX_LENGTH = 32;
+}
+
 Isbn::Isbn()
 {
 
@@ -28,7 +32,10 @@ Isbn::Isbn()
 
 bool Isbn::Validate(const IsbnStandard standard, const string& input) 
 {
-    return CalculateCheckCharacter(standard, input) != NULL_CHAR;
+    char actualCheckCharacter = GetCheckCharacter(input);
+    char calculatedCheckCharacter = CalculateCheckCharacter(standard, input);
+    return actualCheckCharacter != NULL_CHAR 
+        && actualCheckCharacter == calculatedCheckCharacter;
 }
 
 char Isbn::CalculateCheckCharacter(const IsbnStandard standard, const std::string& input)
@@ -40,8 +47,9 @@ char Isbn::CalculateCheckCharacter(const IsbnStandard standard, const std::strin
     int digitCount = 0;
     int sum = 0;
     const char* ptr = &input[0];
+    int charCount = 0;
 
-    while(IsValidCharacter(ptr) && digitCount < requiredQtyDigits - QTY_CHECK_DIGITS)
+    while(IsValidCharacter(ptr) && digitCount < requiredQtyDigits - QTY_CHECK_DIGITS && charCount < MAX_LENGTH)
     {
         if(IsDigit(ptr))
         {
@@ -54,28 +62,38 @@ char Isbn::CalculateCheckCharacter(const IsbnStandard standard, const std::strin
         }
         
         ptr++;
+        charCount++;
     }
 
-    while(IsValidCharacter(ptr) && digitCount == requiredQtyDigits - QTY_CHECK_DIGITS)
+    while(IsValidCharacter(ptr) && digitCount == requiredQtyDigits - QTY_CHECK_DIGITS && charCount < MAX_LENGTH)
     {
         if(IsValidCheckCharacter(ptr))
         {
             digitCount++;
+            checkCharacter = CalculateCheckCharacterFromSum(standard, sum);
         }
         ptr++;
     }
 
-    if(*ptr == '\0' && digitCount == requiredQtyDigits)
-    {
-        checkCharacter = CalculateCheckCharacterFromSum(standard, sum);
+    while(IsIgnorableCharacter(ptr) && charCount < MAX_LENGTH) {
+        ptr++;
+        charCount++;
     }
 
-    return checkCharacter;
+    // if we're not at the end of the string, it's not valid
+    bool isValid = *ptr == '\0';
+
+    return isValid ? checkCharacter : NULL_CHAR;
 }
 
 bool Isbn::IsDigit(const char* ptr) 
 {    
     return *ptr >= '0' && *ptr <= '9';
+}
+
+bool Isbn::IsIgnorableCharacter(const char* ptr)
+{
+    return *ptr == ' ' || *ptr == '-';
 }
 
 bool Isbn::IsValidCharacter(const char* ptr) 
@@ -118,5 +136,20 @@ char Isbn::CalculateCheckCharacterFromSum(const IsbnStandard standard, int sum) 
 }
 
 char Isbn::GetCheckCharacter(const string& isbnString) {
-    return isbnString[isbnString.length() - 1];
+    char checkCharacter = NULL_CHAR;
+    const char* ptr = &isbnString[0];
+    int charCount = 0;
+
+    // find the last valid check character in the string
+    while (*ptr != NULL_CHAR && charCount < MAX_LENGTH)
+    {
+        if(IsValidCheckCharacter(ptr))
+        {
+            checkCharacter = *ptr;
+        }
+        ptr++;
+        charCount++;
+    }
+
+    return checkCharacter;
 }
